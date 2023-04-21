@@ -153,7 +153,7 @@ template<md_size_t N> using MDLayoutRight = MDLayout<N, false>;
 /// Possible use cases with Array, Vector and GridFunction are demonstrated in
 /// the tests/unit/general/test_mdspan.cpp file.
 template<typename mfem_type, typename T, md_size_t N, class layout_type = MDLayoutLeft<N>>
-class MDSpan : public mfem_type
+class MDSpan : protected mfem_type
 {
 protected:
    md_size_t Nd[N], // sizes of the dimensions
@@ -195,6 +195,8 @@ public:
 
    /// Return the ith dimension
    md_size_t Extent(md_size_t i) const { return Nd[i]; }
+
+   md_size_t Size() const { return mfem_type::Size(); }
 
    /// Store and use the given layout to update the strides
    template<typename Layout> void SetLayout(const Layout &l)
@@ -244,25 +246,25 @@ public:
 
    /// Shortcut for mfem::Read(mfem_type::data, mfem_type::size, on_dev)
    /// and return an MDTensor with the MDSpan's pointer and strides
-   const MDTensor<N,const double> MDRead(bool on_dev = true) const
+   const MDTensor<N,const T> MDRead(bool on_dev = true) const
    {
-      const double *ptr = mfem::Read(mfem_type::data, mfem_type::size, on_dev);
-      return MDTensor<N,const double>(ptr, Sd);
+      const T *ptr = mfem::Read(mfem_type::data, mfem_type::size, on_dev);
+      return MDTensor<N,const T>(ptr, Sd);
    }
 
    /// Shortcut for mfem::Read(mfem_type::data, mfem_type::size, false)
    /// and return an MDTensor with the MDSpan's pointer and strides
-   const MDTensor<N,const double> MDHostRead() const
+   const MDTensor<N,const T> MDHostRead() const
    {
-      const double *ptr = mfem::Read(mfem_type::data, mfem_type::size, false);
-      return MDTensor<N,const double>(ptr, Sd);
+      const T *ptr = mfem::Read(mfem_type::data, mfem_type::size, false);
+      return MDTensor<N,const T>(ptr, Sd);
    }
 
    /// Shortcut for mfem::Write(mfem_type::data, mfem_type::size, on_dev)
    /// and return an MDTensor with the MDSpan's pointer and strides
    MDTensor<N> MDWrite(bool on_dev = true)
    {
-      double *ptr = mfem::Write(mfem_type::data, mfem_type::size, on_dev);
+      T *ptr = mfem::Write(mfem_type::data, mfem_type::size, on_dev);
       return MDTensor<N>(ptr, Sd);
    }
 
@@ -270,7 +272,7 @@ public:
    /// and return an MDTensor with the MDSpan's pointer and strides
    MDTensor<N> MDHostWrite()
    {
-      double *ptr = mfem::Write(mfem_type::data, mfem_type::size, false);
+      T *ptr = mfem::Write(mfem_type::data, mfem_type::size, false);
       return MDTensor<N>(ptr, Sd);
    }
 
@@ -278,7 +280,7 @@ public:
    /// and return an MDTensor with the MDSpan's pointer and strides
    MDTensor<N> MDReadWrite(bool on_dev = true)
    {
-      double *ptr = mfem::ReadWrite(mfem_type::data, mfem_type::size, on_dev);
+      T *ptr = mfem::ReadWrite(mfem_type::data, mfem_type::size, on_dev);
       return MDTensor<N>(ptr, Sd);
    }
 
@@ -286,7 +288,7 @@ public:
    /// and return an MDTensor with the MDSpan's pointer and strides
    MDTensor<N> MDHostReadWrite()
    {
-      double *ptr = mfem::ReadWrite(mfem_type::data, mfem_type::size, false);
+      T *ptr = mfem::ReadWrite(mfem_type::data, mfem_type::size, false);
       return MDTensor<N>(ptr, Sd);
    }
 
@@ -364,7 +366,7 @@ public:
    }
 
 private:
-   double *reshape_ptr;
+   T *reshape_ptr;
    std::vector<md_size_t> rNd; // reshape sizes
    md_size_t reshape_offset, reshape_shifts[2];// shift begin & end
    using sub_layout_pair = std::pair<md_size_t,int>;
