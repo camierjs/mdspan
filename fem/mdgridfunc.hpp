@@ -20,7 +20,6 @@
 namespace mfem
 {
 
-// A possible MDGridFunction class
 template<md_size_t N, class Layout = MDLayoutLeft<N>>
 class MDGridFunction : public MDSpan<GridFunction, double, N, Layout>
 {

@@ -21,7 +21,7 @@ namespace mfem
 {
 
 template<typename T, int N, typename Layout = MDLayoutLeft<N>>
-struct MDArray: public MDSpan<mfem::Array<T>, T, N, Layout>
+struct MDArray : public MDSpan<mfem::Array<T>, T, N, Layout>
 {
    using base_t = MDSpan<mfem::Array<T>, T, N, Layout>;
 
