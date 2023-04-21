@@ -147,11 +147,6 @@ template<md_size_t N> using MDLayoutRight = MDLayout<N, false>;
 
 /// \brief The MDSpan base class is a generic non-owning mfem_type's view
 /// that reinterprets it as a multidimensional type.
-/// It is suited for mfem::Array, mfem::Vector and mfem::GridFunction which all
-/// require mfem_type::data and mfem_type::size to exist.
-///
-/// Possible use cases with Array, Vector and GridFunction are demonstrated in
-/// the tests/unit/general/test_mdspan.cpp file.
 template<typename mfem_type, typename T, md_size_t N, class layout_type = MDLayoutLeft<N>>
 class MDSpan : protected mfem_type
 {

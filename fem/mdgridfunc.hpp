@@ -49,9 +49,6 @@ public:
       base_type::Setup(ifes->GetNDofs(), args...);
    }
 
-   operator Vector&() { assert(false); }
-   operator const Vector() const { assert(false); }
-
    template <typename... Ts>
    MDGridFunction(md_size_t n, Ts... args): MDGridFunction(args...)
    {
@@ -61,7 +58,7 @@ public:
    template <md_size_t n = 1, typename... Ts>
    void GetVDofs(Array<int> &dofs, Ts... args) const
    {
-      MFEM_VERIFY(dofs.Size() == Nd[n-1], "Error in difs size!");
+      MFEM_VERIFY(dofs.Size() == Nd[n-1], "Error in dofs size!");
       for (int s = 0; s < dofs.Size(); s++)
       {
          dofs[s] = get_vdofs_offset;

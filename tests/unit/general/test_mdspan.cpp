@@ -19,6 +19,7 @@
 
 #include "unit_tests.hpp"
 
+#include "mfem.hpp"
 #include "general/forall.hpp"
 
 #include "fem/mdgridfunc.hpp"
