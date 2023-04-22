@@ -28,7 +28,9 @@
 
 using namespace mfem;
 
-TEST_CASE("MDArray", "[MDSpan], [MDArray]")
+static bool is_equal(const Vector &a, const Vector &b);
+
+TEST_CASE("MDArray", "[MDSpan][MDArray]")
 {
    SECTION("Types")
    {
@@ -64,7 +66,7 @@ TEST_CASE("MDArray", "[MDSpan], [MDArray]")
    }
 }
 
-TEST_CASE("MDVector", "[MDSpan], [MDVector]")
+TEST_CASE("MDVector", "[MDSpan][MDVector]")
 {
    SECTION("Types")
    {
@@ -120,14 +122,15 @@ TEST_CASE("MDVector", "[MDSpan], [MDVector]")
    }
 }
 
-TEST_CASE("MDGridFunction layouts", "[MDSpan], [MDGridFunction]")
+TEST_CASE("MDGridFunction layouts", "[MDSpan][MDGridFunction]")
 {
-   constexpr int NE = 18, NG = 2, NA = 32;
+   constexpr int NE = 7, NG = 3, NA = 5;
 
    const bool all = launch_all_non_regression_tests;
-   auto p = all ? GENERATE(1,2) : 2;
+   auto p = all ? GENERATE(1,2) : 3;
    auto nx = all ? GENERATE(3,5) : 2;
    auto dim = all ? GENERATE(1,2,3) : 2;
+   CAPTURE(p, nx, dim);
 
    auto MakeCartesian = [](int dim, int nx)
    {
@@ -135,7 +138,6 @@ TEST_CASE("MDGridFunction layouts", "[MDSpan], [MDGridFunction]")
              dim == 3 ? Mesh::MakeCartesian3D(nx, nx, nx, Element::HEXAHEDRON):
              Mesh::MakeCartesian1D(nx);
    };
-
    Mesh mesh = MakeCartesian(dim, nx);
 
    H1_FECollection fec(p, dim);
@@ -155,12 +157,6 @@ TEST_CASE("MDGridFunction layouts", "[MDSpan], [MDGridFunction]")
       MDGridFunction<4> gsa(NE, NG, &fes, NA);
       const int gsa_0123 = gsa.Offset(0, 1, 2, 3);
       REQUIRE(gsa_0123 == 0 + 1*(NE) + 2*(NE*NG) + 3*(NE*NG*ND));
-      mfem::Array<int> vdofs(ND);
-      gsa.GetVDofs(0, 1, vdofs, 3);
-      REQUIRE(0 <= vdofs.Min());
-      REQUIRE(vdofs[2] == gsa_0123);
-      REQUIRE(vdofs.Max() < NE*NG*NA*ND);
-
    }
 
    SECTION("EGDA, right")
@@ -168,27 +164,66 @@ TEST_CASE("MDGridFunction layouts", "[MDSpan], [MDGridFunction]")
       MDGridFunction<4, MDLayoutRight<4>> gsa(NE, NG, &fes, NA);
       const int gsa_0123 = gsa.Offset(0,1,2,3);
       REQUIRE(gsa_0123 == 0*(NG*ND*NA) + 1*(ND*NA) + 2*(NA) + 3);
-      mfem::Array<int> vdofs(ND);
-      gsa.GetVDofs(0, 1, vdofs, 3);
-      REQUIRE(0 <= vdofs.Min());
-      REQUIRE(vdofs[2] == gsa_0123);
-      REQUIRE(vdofs.Max() < NE*NG*NA*ND);
+   }
+
+   SECTION("Set/Get ScalarGridFunction")
+   {
+      MDGridFunction<3> egda(NG, &fes, NA);
+
+      GridFunction gf, rho(&fes);
+
+      BilinearForm M_ho(&fes);
+      M_ho.AddDomainIntegrator(new MassIntegrator);
+      M_ho.Assemble();
+      M_ho.Finalize();
+
+      auto compute_mass = [](GridFunction &gf)
+      {
+         FiniteElementSpace *fes = gf.FESpace();
+         ConstantCoefficient one(1.0);
+         BilinearForm ML2(fes);
+         ML2.AddDomainIntegrator(new MassIntegrator(one));
+         ML2.Assemble();
+         GridFunction ones(fes);
+         ones = 1.0;
+         return ML2.InnerProduct(gf, ones);
+      };
+
+      FunctionCoefficient rho_cft([](const Vector &x)
+      {
+         return x(1) + 0.25*cos(2*M_PI*x.Norml2());
+      });
+      rho.ProjectCoefficient(rho_cft);
+      const double rho_mass = compute_mass(rho);
+
+      const std::list<MDLayout<3>> layouts =
+      { {0,1,2}, {0,2,1}, {1,0,2}, {1,2,0}, {2,1,0}, {2,0,1} };
+
+      for (auto &layout: layouts)
+      {
+         egda = M_PI;
+         egda.SetLayout(layout);
+         for (int na = 0; na < NA; na++)
+         {
+            for (int ng = 0; ng < NG; ng++)
+            {
+               egda.GetScalarGridFunction(ng, gf, na);
+               REQUIRE(gf.Size() == fes.GetVSize());
+               REQUIRE(gf[0] == M_PI);
+               gf = rho;
+               egda.SetScalarGridFunction(ng, gf, na);
+               gf = 0.0;
+               egda.GetScalarGridFunction(ng, gf, na);
+               REQUIRE(is_equal((Vector&)gf, (Vector&)rho));
+               REQUIRE(compute_mass(gf) == MFEM_Approx(rho_mass));
+            }
+         }
+      }
    }
 }
 
-TEST_CASE("MDGridFunction reshapes", "[MDSpan], [MDGridFunction]")
+TEST_CASE("MDGridFunction reshapes", "[MDSpan], [MDReshapes]")
 {
-   auto is_equal = [&](const Vector &a, const Vector &b)
-   {
-      REQUIRE(a.Size() == b.Size());
-      for (int i = 0; i < a.Size(); i++)
-      {
-         const double va = a.GetData()[i], vb = b.GetData()[i];
-         REQUIRE(va == MFEM_Approx(vb));
-      };
-      return true;
-   };
-
    SECTION("MDReshapes")
    {
       constexpr int p = 2;
@@ -298,3 +333,15 @@ TEST_CASE("MDGridFunction reshapes", "[MDSpan], [MDGridFunction]")
       }
    }
 }
+
+static bool is_equal(const Vector &a, const Vector &b)
+{
+   REQUIRE(a.Size() == b.Size());
+   for (int i = 0; i < a.Size(); i++)
+   {
+      const double va = a.GetData()[i], vb = b.GetData()[i];
+      REQUIRE(va == MFEM_Approx(vb));
+   };
+   return true;
+};
+

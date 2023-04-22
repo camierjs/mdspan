@@ -44,7 +44,7 @@ template <md_size_t n, md_size_t N, typename T, typename... Ts>
 struct MDOffset
 {
    static MFEM_HOST_DEVICE inline
-   T offset(const md_size_t Sd[N], const T nd, Ts... args)
+   T offset(const md_size_t (&Sd)[N], T nd, Ts... args)
    { return nd * Sd[n-1] + MDOffset<n+1, N, Ts...>::offset(Sd, args...); }
 };
 
@@ -52,7 +52,7 @@ template <md_size_t N, typename T, typename... Ts>
 struct MDOffset<N, N, T, Ts...>
 {
    static MFEM_HOST_DEVICE inline
-   T offset(const md_size_t Sd[N], const T nd) { return nd * Sd[N-1]; }
+   T offset(const md_size_t (&Sd)[N], T nd) { return nd * Sd[N-1]; }
 };
 
 /// @brief The MDTensor class holds the pointer and strides for each dimension
@@ -191,6 +191,7 @@ public:
    /// Return the ith dimension
    md_size_t Extent(md_size_t i) const { return Nd[i]; }
 
+   /// Return the size of the span.
    md_size_t Size() const { return mfem_type::Size(); }
 
    /// Store and use the given layout to update the strides

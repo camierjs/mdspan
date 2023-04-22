@@ -31,10 +31,12 @@ private:
    mutable md_size_t get_vdofs_offset = 0;
 
 public:
+   using GridFunction::data;
    using GridFunction::Read;
    using GridFunction::Write;
    using GridFunction::HostRead;
    using GridFunction::HostWrite;
+   using GridFunction::operator=;
 
    MDGridFunction(): base_type() { }
 
@@ -55,26 +57,58 @@ public:
       base_type::Setup(n, args...);
    }
 
+   /**
+    * @brief GetScalarGridFunction
+    * @param gf
+    * @param args
+    */
    template <md_size_t n = 1, typename... Ts>
-   void GetVDofs(Array<int> &dofs, Ts... args) const
+   void GetScalarGridFunction(GridFunction &gf, Ts... args) const
    {
-      MFEM_VERIFY(dofs.Size() == Nd[n-1], "Error in dofs size!");
-      for (int s = 0; s < dofs.Size(); s++)
+      FiniteElementSpace *fes = this->GridFunction::fes;
+      MFEM_VERIFY(fes->GetNDofs() == Nd[n-1], "Error in dofs size!");
+      gf.SetSpace(fes);
+      for (int s = 0; s < Nd[n-1]; s++)
       {
-         dofs[s] = get_vdofs_offset;
-         dofs[s] += MDOffset<n,N,md_size_t,Ts...>::offset(Sd, s, args...);
+         const int vdof = get_vdofs_offset +
+                          MDOffset<n,N,md_size_t,Ts...>::offset(Sd, s, args...);
+         gf[s] = data[vdof];
       }
-      get_vdofs_offset = 0;
+      get_vdofs_offset = 0; // re-init for next calls
    }
 
    template <md_size_t n = 1, typename... Ts>
-   void GetVDofs(md_size_t dim, Ts&&... args) const
+   void GetScalarGridFunction(md_size_t dim, Ts&&... args) const
    {
       get_vdofs_offset += dim * Sd[n-1];
-      MDGridFunction::GetVDofs<n+1>(std::forward<Ts>(args)...);
+      MDGridFunction::GetScalarGridFunction<n+1>(std::forward<Ts>(args)...);
+   }
+
+   /**
+    * @brief SetScalarGridFunction
+    * @param gf
+    * @param args
+    */
+   template <md_size_t n = 1, typename... Ts>
+   void SetScalarGridFunction(const GridFunction &gf, Ts... args)
+   {
+      MFEM_VERIFY(GridFunction::fes->GetNDofs() == Nd[n-1], "Error in fespace size!");
+      for (int s = 0; s < Nd[n-1]; s++)
+      {
+         const int vdof = get_vdofs_offset +
+                          MDOffset<n,N,md_size_t,Ts...>::offset(Sd, s, args...);
+         data[vdof] = gf[s];
+      }
+      get_vdofs_offset = 0; // re-init for next calls
+   }
+
+   template <md_size_t n = 1, typename... Ts>
+   void SetScalarGridFunction(md_size_t dim, Ts... args)
+   {
+      get_vdofs_offset += dim * Sd[n-1];
+      MDGridFunction::SetScalarGridFunction<n+1>(args...);
    }
 };
-
 
 } // namespace mfem
 
