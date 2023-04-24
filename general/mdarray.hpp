@@ -21,9 +21,9 @@ namespace mfem
 {
 
 template<typename T, int N, typename Layout = MDLayoutLeft<N>>
-struct MDArray : public MDSpan<mfem::Array<T>, T, N, Layout>
+struct MDArray : public MDSpan<mfem::Array<T>, N, Layout>
 {
-   using base_t = MDSpan<mfem::Array<T>, T, N, Layout>;
+   using base_t = MDSpan<mfem::Array<T>, N, Layout>;
 
    using mfem::Array<T>::Read;
    using mfem::Array<T>::Write;
@@ -33,7 +33,7 @@ struct MDArray : public MDSpan<mfem::Array<T>, T, N, Layout>
    MDArray(): base_t() { }
 
    template <typename... Ts>
-   MDArray(md_size_t n, Ts... args): MDArray(args...)
+   MDArray(int n, Ts... args): MDArray(args...)
    {
       base_t::Setup(n, args...);
    }

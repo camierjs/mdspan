@@ -21,9 +21,9 @@ namespace mfem
 {
 
 template<int N, typename Layout = MDLayoutLeft<N>>
-struct MDVector : public MDSpan<mfem::Vector, double, N, Layout>
+struct MDVector : public MDSpan<mfem::Vector, N, Layout>
 {
-   using base_t = MDSpan<mfem::Vector, double, N, Layout>;
+   using base_t = MDSpan<mfem::Vector, N, Layout>;
 
    using mfem::Vector::Read;
    using mfem::Vector::Write;
@@ -33,7 +33,7 @@ struct MDVector : public MDSpan<mfem::Vector, double, N, Layout>
    MDVector(): base_t() { }
 
    template <typename... Ts>
-   MDVector(md_size_t n, Ts... args): MDVector(args...)
+   MDVector(int n, Ts... args): MDVector(args...)
    {
       base_t::Setup(n, args...);
    }
