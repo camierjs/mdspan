@@ -222,7 +222,7 @@ TEST_CASE("MDGridFunction layouts", "[MDSpan][MDGridFunction]")
    }
 }
 
-TEST_CASE("MDGridFunction reshapes", "[MDSpan], [MDReshapes]")
+TEST_CASE("MDGridFunction reshapes", "[MDSpan][MDReshapes]")
 {
    SECTION("MDReshapes")
    {
