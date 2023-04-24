@@ -17,9 +17,10 @@
 #include <list>
 #include <type_traits>
 
+#include "mfem.hpp"
 #include "unit_tests.hpp"
 
-#include "mfem.hpp"
+#include "general/mdspan.hpp"
 #include "general/forall.hpp"
 
 #include "fem/mdgridfunc.hpp"
@@ -37,7 +38,7 @@ TEST_CASE("MDArray", "[MDSpan][MDArray]")
       MDArray<int,3> mda;
       REQUIRE(mda.Size() == 0);
       REQUIRE(std::is_same<decltype(mda.HostRead()), int const*>());
-      REQUIRE(std::is_same<decltype(mda.MDHostRead()), mfem::MDTensor<3, int const> const>());
+      REQUIRE(std::is_same<decltype(mda.MDHostRead()), MDTensor<3, int const> const>());
    }
 
    SECTION("SetSize")
@@ -69,12 +70,10 @@ TEST_CASE("MDArray", "[MDSpan][MDArray]")
          MDArray<int,3,MDLayoutRight<3>> abc_r(1,2,3);
 
          abc_l.Assign(A);
-         abc_l.Print();
          REQUIRE(abc_l.MDRead()(0,0,0) == 0);
          REQUIRE(abc_l.MDRead()(0,1,2) == 7); // = 0 + 1( 1 + 2( 2)) = 5
 
          abc_r.Assign(A);
-         abc_r.Print();
          REQUIRE(abc_r.MDRead()(0,0,0) == 0);
          REQUIRE(abc_r.MDRead()(0,1,2) == 7); // = ((0)*2 + 1) * 3 + 2 = 5
       }
@@ -125,7 +124,7 @@ TEST_CASE("MDVector", "[MDSpan][MDVector]")
       MDVector<3> mdv;
       REQUIRE(mdv.Size() == 0);
       REQUIRE(std::is_same<decltype(mdv.HostRead()), double const*>());
-      REQUIRE(std::is_same<decltype(mdv.MDHostRead()), mfem::MDTensor<3, double const> const>());
+      REQUIRE(std::is_same<decltype(mdv.MDHostRead()), MDTensor<3, double const> const>());
    }
 
    SECTION("SetSize")
@@ -209,7 +208,7 @@ TEST_CASE("MDGridFunction layouts", "[MDSpan][MDGridFunction]")
       MDGridFunction<4> mdgf(NE, NG, &fes, NA);
       REQUIRE(mdgf.Size() == (NE * NG * fes.GetVSize() * NA));
       REQUIRE(std::is_same<decltype(mdgf.HostRead()), double const*>());
-      REQUIRE(std::is_same<decltype(mdgf.MDHostRead()), mfem::MDTensor<4, double const> const>());
+      REQUIRE(std::is_same<decltype(mdgf.MDHostRead()), MDTensor<4, double const> const>());
    }
 
    SECTION("EGDA, left")
@@ -289,7 +288,7 @@ TEST_CASE("MDGridFunction reshapes", "[MDSpan][MDReshapes]")
       constexpr int p = 2;
       constexpr int dim = 3;
       constexpr int nx = 5, ny = 3, nz = 2;
-      Mesh mesh = Mesh::MakeCartesian3D(nx, ny, nz, mfem::Element::HEXAHEDRON);
+      Mesh mesh = Mesh::MakeCartesian3D(nx, ny, nz, Element::HEXAHEDRON);
 
       H1_FECollection fec_mesh(p, dim);
       FiniteElementSpace fes_mesh(&mesh, &fec_mesh, dim);
@@ -322,7 +321,7 @@ TEST_CASE("MDGridFunction reshapes", "[MDSpan][MDReshapes]")
          nodes_e.Read();
          REQUIRE(nodes);
          R->Mult(*nodes, nodes_e);
-         const auto X = mfem::Reshape(nodes_e.Read(), D1D, D1D, D1D, vdim, ne);
+         const auto X = Reshape(nodes_e.Read(), D1D, D1D, D1D, vdim, ne);
          auto dY = psi.MDWrite();
 
          MDGridFunction<3> rY1(&fes, numGroups, numAngles);

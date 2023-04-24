@@ -44,7 +44,6 @@ void Swap(Array<T> &, Array<T> &);
 template <class T>
 class Array
 {
-
 protected:
    template<typename mfem_type, int N, typename L> friend class MDSpan;
 
