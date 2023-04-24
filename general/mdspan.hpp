@@ -147,9 +147,9 @@ template<int N> using MDLayoutRight = MDLayout<N, false>;
 template<typename mfem_type, int N, class layout_type = MDLayoutLeft<N>>
 class MDSpan : protected mfem_type
 {
+protected:
    using T = typename std::remove_pointer<decltype(mfem_type::data.h_ptr)>::type;
 
-protected:
    int Nd[N], Sd[N]; // dimension sizes and strides, once the layout is set
    layout_type layout; // stored layout, useful for reshapes
 
