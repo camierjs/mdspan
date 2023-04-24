@@ -25,19 +25,39 @@ struct MDArray : public MDSpan<Array<T>, N, Layout>
 {
    using base_t = MDSpan<Array<T>, N, Layout>;
 
+   /**
+    * @brief MDArray default constructor (recursion)
+    */
+   MDArray(): base_t() { }
+
+   /**
+    * @brief MDArray recursion constructor
+    * @param[in] n Dimension indice
+    * @param[in] args Rest of dimension indices
+    */
+   template <typename... Ts>
+   MDArray(int n, Ts... args): MDArray(args...) { base_t::Setup(n, args...); }
+
+   /// Move constructor not supported
+   MDArray(MDArray&&) = delete;
+
+   /// Copy constructor not supported
+   MDArray(const MDArray&) = delete;
+
+   /// Move assignment not supported
+   MDArray& operator=(MDArray&&) = delete;
+
+   /// Copy assignment not supported
+   MDArray& operator=(const MDArray&) = delete;
+
    using Array<T>::Read;
    using Array<T>::Write;
    using Array<T>::HostRead;
    using Array<T>::HostWrite;
 
-   MDArray(): base_t() { }
-
-   MDArray(MDArray&&) = delete;
-   MDArray(const MDArray&) = delete;
-   MDArray& operator=(MDArray&&) = delete;
-
-   template <typename... Ts>
-   MDArray(int n, Ts... args): MDArray(args...) { base_t::Setup(n, args...); }
+   using Array<T>::operator=;
+   using Array<T>::Assign;
+   using Array<T>::Print;
 };
 
 } // namespace mfem

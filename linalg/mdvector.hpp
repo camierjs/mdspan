@@ -25,19 +25,35 @@ struct MDVector : public MDSpan<Vector, N, Layout>
 {
    using base_t = MDSpan<Vector, N, Layout>;
 
+   /**
+    * @brief MDVector default constructor (recursion)
+    */
+   MDVector(): base_t() { }
+
+   /**
+    * @brief MDVector recursion constructor
+    * @param[in] n Dimension indice
+    * @param[in] args Rest of dimension indices
+    */
+   template <typename... Ts>
+   MDVector(int n, Ts... args): MDVector(args...) { base_t::Setup(n, args...); }
+
+   /// Move constructor not supported
+   MDVector(MDVector&&) = delete;
+
+   /// Copy constructor not supported
+   MDVector(const MDVector&) = delete;
+
+   /// Move assignment not supported
+   MDVector& operator=(MDVector&&) = delete;
+
+   /// Copy assignment not supported
+   MDVector& operator=(const MDVector&) = delete;
+
    using Vector::Read;
    using Vector::Write;
    using Vector::HostRead;
    using Vector::HostWrite;
-
-   MDVector(): base_t() { }
-
-   MDVector(MDVector&&) = delete;
-   MDVector(const MDVector&) = delete;
-   MDVector& operator=(MDVector&&) = delete;
-
-   template <typename... Ts>
-   MDVector(int n, Ts... args): MDVector(args...) { base_t::Setup(n, args...); }
 };
 
 } // namespace mfem

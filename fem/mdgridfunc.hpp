@@ -26,36 +26,57 @@ class MDGridFunction : public MDSpan<GridFunction, N, Layout>
    using base_t = MDSpan<GridFunction, N, Layout>;
    using base_t::Nd;
    using base_t::Sd;
+   using GridFunction::data;
 
 public:
 
-   using GridFunction::data;
-
-   using GridFunction::Read;
-   using GridFunction::Write;
-   using GridFunction::HostRead;
-   using GridFunction::HostWrite;
-   using GridFunction::operator=;
-
+   /**
+    * @brief MDGridFunction default constructor (recursion)
+    */
    MDGridFunction(): base_t() { }
 
-   MDGridFunction(MDGridFunction&&) = delete;
-   MDGridFunction(const MDGridFunction&) = delete;
-   MDGridFunction& operator=(MDGridFunction&&) = delete;
-
+   /**
+    * @brief MDGridFunction recursion constructor
+    * @param fes[in] Finite element space to use
+    * @param[in] args Rest of dimension indices
+    */
    template <typename... Ts>
    MDGridFunction(FiniteElementSpace *fes, Ts... args): MDGridFunction(args...)
    {
-      this->GridFunction::fes = fes;
+      SetSpace(fes);
+      MFEM_VERIFY(fes->GetVDim() == 1,
+                  "Only FiniteElementSpace with vdim of 1 are supported");
       base_t::Setup(fes->GetNDofs(), args...);
    }
 
+   /**
+    * @brief MDGridFunction recursion constructor
+    * @param[in] dim Dimension indice
+    * @param[in] args Rest of dimension indices or finite element space to use
+    */
    template <typename... Ts>
-   MDGridFunction(int n, Ts... args): MDGridFunction(args...)
+   MDGridFunction(int dim, Ts... args): MDGridFunction(args...)
    {
-      base_t::Setup(n, args...);
+      base_t::Setup(dim, args...);
    }
 
+   /// Move constructor not supported
+   MDGridFunction(MDGridFunction&&) = delete;
+
+   /// Copy constructor not supported
+   MDGridFunction(const MDGridFunction&) = delete;
+
+   /// Move assignment not supported
+   MDGridFunction& operator=(MDGridFunction&&) = delete;
+
+   /// Copy assignment not supported
+   MDGridFunction& operator=(const MDGridFunction&) = delete;
+
+   /**
+    * @brief Returns the specific GridFunction from dimension indices
+    * @param[out] gf Returned GridFunction
+    * @param[in] args Rest of dimension indices
+    */
    template <int n = 1, typename... Ts>
    void GetScalarGridFunction(GridFunction &gf, Ts... args) const
    {
@@ -70,6 +91,11 @@ public:
       get_vdofs_offset = 0; // re-init for next calls
    }
 
+   /**
+    * @brief Returns the specific GridFunction from dimension indices
+    * @param[in] dim Dimension indice
+    * @param args Rest of dimension indices or GridFunction to be returned
+    */
    template <int n = 1, typename... Ts>
    void GetScalarGridFunction(int dim, Ts&&... args) const
    {
@@ -77,10 +103,15 @@ public:
       MDGridFunction::GetScalarGridFunction<n+1>(std::forward<Ts>(args)...);
    }
 
+   /**
+    * @brief Sets the given GridFunction at the specific dimension indices
+    * @param[in] gf GridFunction to set
+    * @param[in] args Rest of dimension indices
+    */
    template <int n = 1, typename... Ts>
    void SetScalarGridFunction(const GridFunction &gf, Ts... args)
    {
-      MFEM_VERIFY(GridFunction::fes->GetNDofs() == Nd[n-1], "Error in fespace size!");
+      MFEM_VERIFY(GridFunction::fes->GetNDofs() == Nd[n-1], "Error in dofs size!");
       for (int s = 0; s < Nd[n-1]; s++)
       {
          data[get_vdofs_offset +
@@ -89,12 +120,25 @@ public:
       get_vdofs_offset = 0; // re-init for next calls
    }
 
+   /**
+    * @brief Sets the given GridFunction at the specific dimension indices
+    * @param[in] dim Dimension indice
+    * @param args Rest of dimension indices or given GridFunction to be used
+    */
    template <int n = 1, typename... Ts>
    void SetScalarGridFunction(int dim, Ts... args)
    {
       get_vdofs_offset += dim * Sd[n-1];
       MDGridFunction::SetScalarGridFunction<n+1>(args...);
    }
+
+   using GridFunction::Read;
+   using GridFunction::Write;
+   using GridFunction::HostRead;
+   using GridFunction::HostWrite;
+
+   using GridFunction::SetSpace;
+   using GridFunction::operator=;
 
 private:
    mutable int get_vdofs_offset = 0;

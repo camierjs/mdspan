@@ -43,11 +43,63 @@ TEST_CASE("MDArray", "[MDSpan][MDArray]")
    SECTION("SetSize")
    {
       constexpr int NA = 11, NB = 22, NC = 33;
-      MDArray<int,3> abc;
-      abc.SetSize(NA, NB, NC);
-      REQUIRE(abc.Size() == NA*NB*NC);
-      abc.HostRead();
-      abc.MDHostRead();
+      {
+
+         const int A = 7;
+         MDArray<int,3> abc;
+         abc.SetSize(NA, NB, NC);
+         abc = 7;
+         REQUIRE(abc.Size() == NA*NB*NC);
+         REQUIRE(abc.Read());
+         REQUIRE(abc.Write());
+         REQUIRE(abc.HostRead());
+         REQUIRE(abc.HostWrite());
+         REQUIRE(abc.MDRead()(0,0,0) == A);
+         REQUIRE(abc.MDWrite()(0,0,0) == A);
+         REQUIRE(abc.MDHostRead()(0,0,0) == A);
+         REQUIRE(abc.MDHostWrite()(0,0,0) == A);
+      }
+      {
+         MDArray<int,3> abc(NA, NB, NC);
+         REQUIRE(abc.Size() == NA*NB*NC);
+      }
+      {
+         const int A[6] = {0, 1, 2, 3, 4, 7};
+         MDArray<int,3,MDLayoutLeft<3>> abc_l(1,2,3);
+         MDArray<int,3,MDLayoutRight<3>> abc_r(1,2,3);
+
+         abc_l.Assign(A);
+         abc_l.Print();
+         REQUIRE(abc_l.MDRead()(0,0,0) == 0);
+         REQUIRE(abc_l.MDRead()(0,1,2) == 7); // = 0 + 1( 1 + 2( 2)) = 5
+
+         abc_r.Assign(A);
+         abc_r.Print();
+         REQUIRE(abc_r.MDRead()(0,0,0) == 0);
+         REQUIRE(abc_r.MDRead()(0,1,2) == 7); // = ((0)*2 + 1) * 3 + 2 = 5
+      }
+
+      SECTION("Offset")
+      {
+         constexpr int NA = 18, NB = 2, NC = 36;
+         // Fortran col major: (18, 2, 36)
+         //                    ( 0, 1,  2)
+         // = 0 + 18( 1 + 2( 2)) = 90
+         MDArray<int,3> left(NA,NB,NC); // default layout is LayoutLeft
+         REQUIRE(left.Offset(0,1,2) == 90);
+
+         // C/C++ row major: (18, 2, 36)
+         //                  ( 0, 1,  2)
+         // = 32( 2 + 36( 1 + 2(0))) = 38
+         // = ((0)*2 + 1) * 36 + 2
+         MDArray<int,3> right(NA, NB, NC);
+         right.SetLayout(MDLayout<3>({2,1,0}));
+         REQUIRE(right.Offset(0,1,2) == 38);
+
+         MDArray<int,3,MDLayoutRight<3>> right4(NA, NB, NC);
+         right4.SetLayout(MDLayoutRight<3>({2,1,0}));
+         REQUIRE(right4.Offset(0,1,2) == 38);
+      }
    }
 
    SECTION("SetLayout")
@@ -79,9 +131,17 @@ TEST_CASE("MDVector", "[MDSpan][MDVector]")
    SECTION("SetSize")
    {
       constexpr int NA = 11, NB = 22, NC = 33;
-      MDVector<3> abc;
-      abc.SetSize(NA, NB, NC);
-      REQUIRE(abc.Size() == NA*NB*NC);
+      {
+         MDVector<3> abc;
+         abc.SetSize(NA, NB, NC);
+         REQUIRE(abc.Size() == NA*NB*NC);
+         abc.HostRead();
+         abc.MDHostRead();
+      }
+      {
+         MDVector<3> abc(NA, NB, NC);
+         REQUIRE(abc.Size() == NA*NB*NC);
+      }
    }
 
    SECTION("SetLayout")

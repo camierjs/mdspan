@@ -183,8 +183,11 @@ public:
    /// Copy constructor (delete)
    MDSpan(const MDSpan&) = delete;
 
-   /// Copy assignment (delete)
+   /// Move assignment (delete)
    MDSpan& operator=(MDSpan&&) = delete;
+
+   /// Copy assignment (delete)
+   MDSpan& operator=(const MDSpan&) = delete;
 
    /// Return the ith dimension
    int Extent(int i) const { return Nd[i]; }
