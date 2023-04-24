@@ -134,11 +134,16 @@ public:
 
    using GridFunction::Read;
    using GridFunction::Write;
+   using GridFunction::ReadWrite;
    using GridFunction::HostRead;
    using GridFunction::HostWrite;
+   using GridFunction::HostReadWrite;
 
+   using GridFunction::GetData;
+   using GridFunction::SetData;
    using GridFunction::SetSpace;
-   using GridFunction::operator=;
+
+   using Vector::operator=;
 
 private:
    mutable int get_vdofs_offset = 0;

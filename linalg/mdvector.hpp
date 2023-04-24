@@ -52,8 +52,15 @@ struct MDVector : public MDSpan<Vector, N, Layout>
 
    using Vector::Read;
    using Vector::Write;
+   using Vector::ReadWrite;
    using Vector::HostRead;
    using Vector::HostWrite;
+   using Vector::HostReadWrite;
+
+   using Vector::GetData;
+   using Vector::SetData;
+
+   using Vector::operator=;
 };
 
 } // namespace mfem

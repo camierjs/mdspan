@@ -52,12 +52,17 @@ struct MDArray : public MDSpan<Array<T>, N, Layout>
 
    using Array<T>::Read;
    using Array<T>::Write;
+   using Array<T>::ReadWrite;
    using Array<T>::HostRead;
    using Array<T>::HostWrite;
+   using Array<T>::HostReadWrite;
 
-   using Array<T>::operator=;
    using Array<T>::Assign;
    using Array<T>::Print;
+
+   using Array<T>::GetData;
+
+   using Array<T>::operator=;
 };
 
 } // namespace mfem
