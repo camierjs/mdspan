@@ -37,7 +37,7 @@ public:
 
    /**
     * @brief MDGridFunction recursion constructor
-    * @param fes[in] Finite element space to use
+    * @param[in] fes Finite element space to use
     * @param[in] args Rest of dimension indices
     */
    template <typename... Ts>
