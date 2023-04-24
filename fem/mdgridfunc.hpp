@@ -23,56 +23,49 @@ namespace mfem
 template<int N, class Layout = MDLayoutLeft<N>>
 class MDGridFunction : public MDSpan<GridFunction, N, Layout>
 {
-   using base_type = MDSpan<GridFunction, N, Layout>;
-   using base_type::Nd;
-   using base_type::Sd;
-
-private:
-   mutable int get_vdofs_offset = 0;
+   using base_t = MDSpan<GridFunction, N, Layout>;
+   using base_t::Nd;
+   using base_t::Sd;
 
 public:
+
    using GridFunction::data;
+
    using GridFunction::Read;
    using GridFunction::Write;
    using GridFunction::HostRead;
    using GridFunction::HostWrite;
    using GridFunction::operator=;
 
-   MDGridFunction(): base_type() { }
+   MDGridFunction(): base_t() { }
 
    MDGridFunction(MDGridFunction&&) = delete;
    MDGridFunction(const MDGridFunction&) = delete;
    MDGridFunction& operator=(MDGridFunction&&) = delete;
 
    template <typename... Ts>
-   MDGridFunction(FiniteElementSpace *ifes, Ts... args): MDGridFunction(args...)
+   MDGridFunction(FiniteElementSpace *fes, Ts... args): MDGridFunction(args...)
    {
-      this->GridFunction::fes = ifes;
-      base_type::Setup(ifes->GetNDofs(), args...);
+      this->GridFunction::fes = fes;
+      base_t::Setup(fes->GetNDofs(), args...);
    }
 
    template <typename... Ts>
    MDGridFunction(int n, Ts... args): MDGridFunction(args...)
    {
-      base_type::Setup(n, args...);
+      base_t::Setup(n, args...);
    }
 
-   /**
-    * @brief GetScalarGridFunction
-    * @param gf
-    * @param args
-    */
    template <int n = 1, typename... Ts>
    void GetScalarGridFunction(GridFunction &gf, Ts... args) const
    {
-      FiniteElementSpace *fes = this->GridFunction::fes;
+      FiniteElementSpace *fes = GridFunction::fes;
       MFEM_VERIFY(fes->GetNDofs() == Nd[n-1], "Error in dofs size!");
       gf.SetSpace(fes);
       for (int s = 0; s < Nd[n-1]; s++)
       {
-         const int vdof = get_vdofs_offset +
-                          MDOffset<n,N,int,Ts...>::offset(Sd, s, args...);
-         gf[s] = data[vdof];
+         gf[s] = data[get_vdofs_offset +
+                      MDOffset<n,N,int,Ts...>::offset(Sd, s, args...)];
       }
       get_vdofs_offset = 0; // re-init for next calls
    }
@@ -84,20 +77,14 @@ public:
       MDGridFunction::GetScalarGridFunction<n+1>(std::forward<Ts>(args)...);
    }
 
-   /**
-    * @brief SetScalarGridFunction
-    * @param gf
-    * @param args
-    */
    template <int n = 1, typename... Ts>
    void SetScalarGridFunction(const GridFunction &gf, Ts... args)
    {
       MFEM_VERIFY(GridFunction::fes->GetNDofs() == Nd[n-1], "Error in fespace size!");
       for (int s = 0; s < Nd[n-1]; s++)
       {
-         const int vdof = get_vdofs_offset +
-                          MDOffset<n,N,int,Ts...>::offset(Sd, s, args...);
-         data[vdof] = gf[s];
+         data[get_vdofs_offset +
+              MDOffset<n,N,int,Ts...>::offset(Sd, s, args...)] = gf[s];
       }
       get_vdofs_offset = 0; // re-init for next calls
    }
@@ -108,6 +95,9 @@ public:
       get_vdofs_offset += dim * Sd[n-1];
       MDGridFunction::SetScalarGridFunction<n+1>(args...);
    }
+
+private:
+   mutable int get_vdofs_offset = 0;
 };
 
 } // namespace mfem

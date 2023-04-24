@@ -21,22 +21,23 @@ namespace mfem
 {
 
 template<typename T, int N, typename Layout = MDLayoutLeft<N>>
-struct MDArray : public MDSpan<mfem::Array<T>, N, Layout>
+struct MDArray : public MDSpan<Array<T>, N, Layout>
 {
-   using base_t = MDSpan<mfem::Array<T>, N, Layout>;
+   using base_t = MDSpan<Array<T>, N, Layout>;
 
-   using mfem::Array<T>::Read;
-   using mfem::Array<T>::Write;
-   using mfem::Array<T>::HostRead;
-   using mfem::Array<T>::HostWrite;
+   using Array<T>::Read;
+   using Array<T>::Write;
+   using Array<T>::HostRead;
+   using Array<T>::HostWrite;
 
    MDArray(): base_t() { }
 
+   MDArray(MDArray&&) = delete;
+   MDArray(const MDArray&) = delete;
+   MDArray& operator=(MDArray&&) = delete;
+
    template <typename... Ts>
-   MDArray(int n, Ts... args): MDArray(args...)
-   {
-      base_t::Setup(n, args...);
-   }
+   MDArray(int n, Ts... args): MDArray(args...) { base_t::Setup(n, args...); }
 };
 
 } // namespace mfem

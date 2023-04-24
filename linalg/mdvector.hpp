@@ -21,22 +21,23 @@ namespace mfem
 {
 
 template<int N, typename Layout = MDLayoutLeft<N>>
-struct MDVector : public MDSpan<mfem::Vector, N, Layout>
+struct MDVector : public MDSpan<Vector, N, Layout>
 {
-   using base_t = MDSpan<mfem::Vector, N, Layout>;
+   using base_t = MDSpan<Vector, N, Layout>;
 
-   using mfem::Vector::Read;
-   using mfem::Vector::Write;
-   using mfem::Vector::HostRead;
-   using mfem::Vector::HostWrite;
+   using Vector::Read;
+   using Vector::Write;
+   using Vector::HostRead;
+   using Vector::HostWrite;
 
    MDVector(): base_t() { }
 
+   MDVector(MDVector&&) = delete;
+   MDVector(const MDVector&) = delete;
+   MDVector& operator=(MDVector&&) = delete;
+
    template <typename... Ts>
-   MDVector(int n, Ts... args): MDVector(args...)
-   {
-      base_t::Setup(n, args...);
-   }
+   MDVector(int n, Ts... args): MDVector(args...) { base_t::Setup(n, args...); }
 };
 
 } // namespace mfem
