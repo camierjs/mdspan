@@ -44,9 +44,10 @@ void Swap(Array<T> &, Array<T> &);
 template <class T>
 class Array
 {
-   template<typename mfem_type, int N, typename L> friend class MDSpan;
 
 protected:
+   template<typename mfem_type, int N, typename L> friend class MDSpan;
+
    /// Pointer to data
    Memory<T> data;
    /// Size of the array
